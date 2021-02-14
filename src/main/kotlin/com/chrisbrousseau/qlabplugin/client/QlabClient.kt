@@ -2,13 +2,12 @@ package com.chrisbrousseau.qlabplugin.client
 
 import com.illposed.osc.OSCMessage
 import com.illposed.osc.transport.udp.OSCPortOut
-import objects.notifications.Notifications
 import com.chrisbrousseau.qlabplugin.QlabPlugin
 import com.chrisbrousseau.qlabplugin.queItems.QlabQueItem
 import java.net.InetAddress
 import java.util.logging.Logger
 
-class QlabClient(val plugin: QlabPlugin) {
+class QlabClient(private val plugin: QlabPlugin) {
     private val logger = Logger.getLogger(QlabClient::class.java.name)
 
     fun triggerRemoteCue(queItem: QlabQueItem) {
@@ -24,6 +23,9 @@ class QlabClient(val plugin: QlabPlugin) {
 
             logger.fine("Sending UDP message to QLab with payload: $message")
             socketConnection.send(OSCMessage(message))
+
+            logger.fine("Closing OSCMessage Socket")
+            socketConnection.close()
         } catch (e: com.illposed.osc.OSCSerializeException) {
             logger.warning("Couldn't send message to QLab, failed with OSCSerializeException")
             throw Exception("Failed to send message to QLab due to serializer exception")

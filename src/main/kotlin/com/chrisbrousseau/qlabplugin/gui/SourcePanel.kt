@@ -1,17 +1,15 @@
 package com.chrisbrousseau.qlabplugin.gui
 
 import gui.Refreshable
-import objects.notifications.Notifications
+import handles.QueItemTransferHandler
 import objects.que.Que
 import com.chrisbrousseau.qlabplugin.QlabPlugin
 import com.chrisbrousseau.qlabplugin.queItems.QlabQueItem
 import java.awt.BorderLayout
-import java.lang.NullPointerException
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import java.util.logging.Logger
-import javax.swing.JButton
-import javax.swing.JLabel
-import javax.swing.JPanel
-import javax.swing.JTextField
+import javax.swing.*
 import javax.swing.border.EmptyBorder
 
 class SourcePanel(private val plugin: QlabPlugin) : JPanel(), Refreshable {
@@ -24,37 +22,46 @@ class SourcePanel(private val plugin: QlabPlugin) : JPanel(), Refreshable {
         GUI.register(this)
     }
 
-    private fun addQueItem() {
-        try {
-            val cueNumber = textField.text!!.trim()
-            if (cueNumber != "") {
-                val queItem = QlabQueItem(plugin, cueNumber)
-
-                Que.add(queItem)
-                GUI.refreshQueItems()
-            }
-
-            // Clear cueNumber
-            textField.text = ""
-        } catch(e: NullPointerException) {
-            logger.warning("Cannot add QLab QueItem to the list.")
-            Notifications.add("Tried to add an invalid selection to the QueList, skipping", "QlabPlugin")
+    private fun createQueItem(): QlabQueItem? {
+        val cueNumber = textField.text!!.trim()
+        if (cueNumber != "") {
+            return QlabQueItem(plugin, cueNumber)
         }
+        return null
     }
 
     private fun initGui() {
         layout = BorderLayout(10, 10)
         border = EmptyBorder(10, 10, 0, 10)
 
-        add(JLabel("Cue Number:"), BorderLayout.PAGE_START)
-
-        add(textField, BorderLayout.CENTER)
+        val panel = JPanel(BorderLayout(10, 10))
+        panel.add(JLabel("Enter QLab Cue Number:"), BorderLayout.PAGE_START)
+        panel.add(textField, BorderLayout.CENTER)
 
         val button = JButton()
         button.text = "Add"
         button.addActionListener {
-            addQueItem()
+            val queItem = createQueItem()
+            queItem?.let {
+                Que.add(it)
+                GUI.refreshQueItems()
+            }
+            textField.text = ""
         }
-        add(button, BorderLayout.PAGE_END)
+        button.transferHandler = QueItemTransferHandler()
+        button.addMouseMotionListener(object: MouseAdapter() {
+            override fun mouseDragged(e: MouseEvent) {
+                val queItem = createQueItem()
+                queItem?.let {
+                    val transferHandler = (e.source as JButton).transferHandler as QueItemTransferHandler
+                    transferHandler.queItem = it
+                    transferHandler.exportAsDrag(e.source as JComponent, e, TransferHandler.COPY)
+                }
+                textField.text = ""
+            }
+        })
+        panel.add(button, BorderLayout.PAGE_END)
+
+        add(panel, BorderLayout.PAGE_START)
     }
 }

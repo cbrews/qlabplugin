@@ -49,7 +49,7 @@ class QlabPlugin : QueItemBasePlugin {
 
     override fun jsonToQueItem(jsonQueueItem: JsonQueue.QueueItem): QueItem {
         return when (jsonQueueItem.className) {
-            QlabQueItem::class.java.name -> QlabQueItem.fromJson(this, jsonQueueItem)
+            QlabQueItem::class.java.simpleName -> QlabQueItem.fromJson(this, jsonQueueItem)
             else -> throw IllegalArgumentException("Invalid QLab queue item: ${jsonQueueItem.className}")
         }
     }
